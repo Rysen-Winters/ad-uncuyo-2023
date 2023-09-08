@@ -29,30 +29,36 @@ vector<int> create_LPS(string pattern){
     return table;
 }
 
-vector<int> pattern_matching_KMP(string pattern, string text){
+int pattern_matching_KMP(string pattern, string text){
     vector<int> table_LSP = create_LPS(pattern);
     int pattern_ln = pattern.length();
     int pattern_index = 0;
     int matches = 0;
-    int times_found;
+    int times_found = 0;
     for (int i = 0; (i < text.length()); i++){
         if (pattern[pattern_index] == text[i]){
             pattern_index += 1;
             matches += 1;
             if (pattern_ln == matches){
                 times_found += 1;
+                matches = 0;
+                pattern_index = 0;
             }
         }else{
             pattern_index = table_LSP[matches];
             matches = table_LSP[matches];
         }
     }
+    return times_found;
 }
 
 int main(){
-    string pattern = "ABABACA";
+    string pattern = "ababaca";
+    string text = "ababacaadsasdasdababacaasdasdababacaasdasdababacaababacaasdasdababaca";
     vector<int> table = create_LPS(pattern);
     for (int i = 0; i < table.size(); i++){
         cout << "Tabla: " << table.at(i) << endl; 
     }
+    int times_found = pattern_matching_KMP(pattern, text);
+    cout << "El patrón se encontró: " << times_found << " veces." << endl;
 }
