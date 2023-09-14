@@ -1,6 +1,9 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <fstream>
+#include <thread>
+#include <sys/time.h>
 using namespace std;
 
 
@@ -8,29 +11,12 @@ vector<int> create_LPS(string pattern){
     int pattern_ln = pattern.length();
     vector<int> table;
     table.push_back(0);
-    int matches;
-    string substring;
-    int substr_index;
-    for (int i = 2; i<(pattern_ln+1);i++){
-        substring = pattern.substr(0,i);
-        matches = 0;
-        substr_index = 0;
-        for (int j = 1; (j < i); j++){
-            if (substring[j]==substring[substr_index]){
-                matches += 1;
-                substr_index += 1;
-            }else{
-                matches = 0;
-                substr_index = 0;
-            }
-        }
-        table.push_back(matches);
-    }
+    for i
     return table;
 }
 
 int pattern_matching_KMP(string pattern, string text){
-    vector<int> table_LSP = create_LPS(pattern);
+    vector<int> table_LPS = create_LPS(pattern);
     int pattern_ln = pattern.length();
     int pattern_index = 0;
     int matches = 0;
@@ -45,20 +31,41 @@ int pattern_matching_KMP(string pattern, string text){
                 pattern_index = 0;
             }
         }else{
-            pattern_index = table_LSP[matches];
-            matches = table_LSP[matches];
+            pattern_index = table_LPS[matches];
+            matches = table_LPS[matches];
         }
     }
+    cout << "Times found = " << times_found << endl;
     return times_found;
 }
 
 int main(){
-    string pattern = "ababaca";
-    string text = "ababacaadsasdasdababacaasdasdababacaasdasdababacaababacaasdasdababaca";
-    vector<int> table = create_LPS(pattern);
-    for (int i = 0; i < table.size(); i++){
-        cout << "Tabla: " << table.at(i) << endl; 
+    ifstream pattern_file("archivos/patrones.txt"), text_file("archivos/texto.txt");
+    string text, current_pattern;
+    cout << (pattern_matching_KMP("leoneleon", "ababacaaleoneleonsdasadaleoneleonbabacaasdasdababacaasdasableoneleonleoneleonabacaasdasdababacleoneleonaasdasdababacaababaca")) << endl;
+    getline(text_file, text);
+    int times_found = 0;
+    timeval time1,time2;
+    gettimeofday(&time1,NULL);
+
+    getline(pattern_file, current_pattern);
+    times_found = pattern_matching_KMP(current_pattern, text);
+    cout << "Patron:" << current_pattern << "Patron:" << endl;
+    vector<int> vector_lps = create_LPS(current_pattern);
+    for (int i = 0; i < current_pattern.length(); i++){
+        cout << "vector_lps["<< i <<"]: " << vector_lps[i] << endl;
     }
-    int times_found = pattern_matching_KMP(pattern, text);
-    cout << "El patrón se encontró: " << times_found << " veces." << endl;
+    cout << "Encontrado " << times_found << " veces." << endl; 
+    /*
+    while (pattern_file.eof() == false){
+
+        
+        getline(pattern_file, current_pattern);
+        times_found = pattern_matching_KMP(current_pattern, text);
+        cout << "Patron: " << current_pattern << " encontrado " << times_found << " veces." << endl;
+        
+    }
+    */
+    gettimeofday(&time2,NULL);
+    cout << "El tiempo de ejecución fue: " << double(time2.tv_sec - time1.tv_sec) + double(time2.tv_usec-time1.tv_usec)/1000000 << endl;
 }
