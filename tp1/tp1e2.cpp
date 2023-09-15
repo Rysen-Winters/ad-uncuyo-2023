@@ -11,7 +11,14 @@ vector<int> create_LPS(string pattern){
     int pattern_ln = pattern.length();
     vector<int> table;
     table.push_back(0);
-    for i
+    int j = 0;
+    bool found_lps;
+    for (int i = 1; i <= pattern_ln; i++){
+        found_lps = false
+        while (found_lps){
+            
+        }
+    }
     return table;
 }
 
