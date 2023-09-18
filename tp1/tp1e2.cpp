@@ -4,75 +4,79 @@
 #include <fstream>
 #include <thread>
 #include <sys/time.h>
+#include <mutex>
+#include <iomanip>
 using namespace std;
 
+vector<string> pattern_list;
+vector<int> result_list;
+mutex result_lock;
 
-vector<int> create_LPS(string pattern){
-    int pattern_ln = pattern.length();
-    vector<int> table;
-    table.push_back(0);
-    int j = 0;
-    bool found_lps;
-    for (int i = 1; i <= pattern_ln; i++){
-        found_lps = false
-        while (found_lps){
-            
-        }
-    }
-    return table;
-}
-
-int pattern_matching_KMP(string pattern, string text){
-    vector<int> table_LPS = create_LPS(pattern);
+int pattern_matching_std(string pattern, string text, int pattern_num){    
     int pattern_ln = pattern.length();
     int pattern_index = 0;
-    int matches = 0;
     int times_found = 0;
     for (int i = 0; (i < text.length()); i++){
         if (pattern[pattern_index] == text[i]){
             pattern_index += 1;
-            matches += 1;
-            if (pattern_ln == matches){
+            if (pattern_ln == pattern_index){
                 times_found += 1;
-                matches = 0;
                 pattern_index = 0;
             }
         }else{
-            pattern_index = table_LPS[matches];
-            matches = table_LPS[matches];
+            pattern_index = 0;
+            if (pattern[pattern_index] == text[i]){
+                pattern_index += 1;
+            }
         }
     }
-    cout << "Times found = " << times_found << endl;
+    result_lock.lock();
+    result_list[pattern_num] = times_found;
+    result_lock.unlock();
     return times_found;
 }
 
 int main(){
     ifstream pattern_file("archivos/patrones.txt"), text_file("archivos/texto.txt");
     string text, current_pattern;
-    cout << (pattern_matching_KMP("leoneleon", "ababacaaleoneleonsdasadaleoneleonbabacaasdasdababacaasdasableoneleonleoneleonabacaasdasdababacleoneleonaasdasdababacaababaca")) << endl;
-    getline(text_file, text);
-    int times_found = 0;
-    timeval time1,time2;
-    gettimeofday(&time1,NULL);
-
-    getline(pattern_file, current_pattern);
-    times_found = pattern_matching_KMP(current_pattern, text);
-    cout << "Patron:" << current_pattern << "Patron:" << endl;
-    vector<int> vector_lps = create_LPS(current_pattern);
-    for (int i = 0; i < current_pattern.length(); i++){
-        cout << "vector_lps["<< i <<"]: " << vector_lps[i] << endl;
-    }
-    cout << "Encontrado " << times_found << " veces." << endl; 
-    /*
+    int times_found;
+    timeval time1,time2, p_time1, p_time2;
+    text_file >> text; 
     while (pattern_file.eof() == false){
-
-        
-        getline(pattern_file, current_pattern);
-        times_found = pattern_matching_KMP(current_pattern, text);
-        cout << "Patron: " << current_pattern << " encontrado " << times_found << " veces." << endl;
-        
+        pattern_file >> current_pattern;
+        pattern_list.push_back(current_pattern);
+        result_list.push_back(0);
     }
-    */
+    gettimeofday(&time1,NULL);
+    cout << "Buscando patrones en una ejecución linear..."<< endl;
+    for (int i = 0; i < pattern_list.size(); i++){
+        times_found = pattern_matching_std(pattern_list.at(i), text, i);
+        cout << "Patron "<< i << " (" << pattern_list.at(i) << ") encontrado " << times_found << " veces." << endl;
+    }
     gettimeofday(&time2,NULL);
-    cout << "El tiempo de ejecución fue: " << double(time2.tv_sec - time1.tv_sec) + double(time2.tv_usec-time1.tv_usec)/1000000 << endl;
+    double linear_time = double(time2.tv_sec - time1.tv_sec) + double(time2.tv_usec-time1.tv_usec)/1000000;
+    cout << "El tiempo de ejecución, sin paralelizar, fue: " << linear_time << " segundos."<< endl;
+    vector<thread> thread_list;
+    cout << endl;
+    cout << "Paralelizando usando 32 hilos..." << endl;
+    gettimeofday(&p_time1,NULL);
+    for (int i = 0; i < 32; i++){
+        thread_list.push_back(thread(pattern_matching_std,pattern_list.at(i),text, i));
+    }
+    for (auto &thr : thread_list){
+        if (thr.joinable()){
+            thr.join();
+        }
+    }
+    gettimeofday(&p_time2,NULL);
+    double parallel_time = double(p_time2.tv_sec - p_time1.tv_sec) + double(p_time2.tv_usec-p_time1.tv_usec)/1000000;
+    cout << endl;
+    cout << "Imprimiendo resultados de los hilos" << endl;
+    for (int i = 0; i < result_list.size(); i++){
+        cout << "Patron " << i << " encontrado " << result_list[i] << endl;
+    }
+    cout << "El tiempo de ejecución, paralelizando en 32 hilos, fue: " << parallel_time << " segundos."<< endl;
+    double speedup = linear_time / parallel_time;
+    cout << endl;
+    cout << "El speedup fue de: " << setprecision(5) << speedup << endl;
 }
